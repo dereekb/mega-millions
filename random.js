@@ -42,7 +42,7 @@ function isLuckyPlay(picks, megaBall) {
 
 function generateMegaMillionsPlay() {
   let picks = pickNumbers();
-  let megaBall = Math.min(Math.floor(Math.random() * 25) + 1, 6);
+  let megaBall = Math.floor(Math.random() * 25) + 1;
   let lucky = isLuckyPlay(picks, megaBall);
 
   return {
