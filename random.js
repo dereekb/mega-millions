@@ -5,16 +5,23 @@ for (let i = 1; i <= POWER_BALL_NUMBERS; i += 1) {
   numbers.push(i);
 }
 
-function isFeelingLucky(x) {
-  return (Math.floor(Math.random() * 10000) % 7) === 0;
+function isFeelingLuckyGenerator(x) {
+  let k;
+
+  return (x) => {
+    k = Math.floor(Math.random() * 15) + 4;
+    return (Math.floor(Math.random() * 10000) % k) === 0;
+  }
 }
 
 function pickNumbers(count = 5) {
   let picksRemaining = count;
 
+  const isFeelingLucky = isFeelingLuckyGenerator();
+
   function isForcePick(x) {
     let numbersRemaining = POWER_BALL_NUMBERS - x;
-    let forcePick = numbersRemaining <= picksRemaining;
+    let forcePick = numbersRemaining <= (picksRemaining - 1);
     return forcePick;
   }
 
@@ -57,6 +64,10 @@ function printPlay(play) {
   return play;
 }
 
+function printPlaySpreadsheetRow(play) {
+  console.log(play.picks.concat([play.megaBall, play.lucky]).join(' '));
+}
+
 function playMegaMillionsRound() {
   return printPlay(generateMegaMillionsPlay());
 }
@@ -91,20 +102,30 @@ function playMegaMillions(rounds = 1, luckyOnly, luckyRounds) {
   return results;
 }
 
-function printPlayResults(results) {
+function printPlayResultsHeader() {
   console.log(JSON.stringify({
     ...results,
     plays: undefined
   }));
   console.log('--------- PLAYS ----------')
+}
+
+function printPlayResults(results) {
+  printPlayResultsHeader(results);
   results.plays.forEach((x) => printPlay(x));
 }
 
-const LUCKY_ONLY = Boolean(process.argv[3]) || false;
-const ROUNDS = Number(process.argv[2]) || (LUCKY_ONLY) ? 1000 : 1;
+function printSpreadsheetPlayResults(results) {
+  printPlayResultsHeader(results);
+  results.plays.forEach((x) => printPlaySpreadsheetRow(x));
+}
+
+const LUCKY_ONLY = Boolean(process.argv[3] === 'true') || false;
+const ROUNDS = Number(process.argv[2]) || ((LUCKY_ONLY) ? 1000 : 1);
 const LUCKY_ROUNDS = Number(process.argv[4]) || 1;
+const SPREADSHEET_PRINT = Boolean(process.argv[5] === 'true') || false;
 
 let results = playMegaMillions(ROUNDS, LUCKY_ONLY, LUCKY_ROUNDS);
 
 // Print Results
-printPlayResults(results);
+((SPREADSHEET_PRINT) ? printSpreadsheetPlayResults : printPlayResults)(results);
