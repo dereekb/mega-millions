@@ -1,4 +1,5 @@
 const POWER_BALL_NUMBERS = 70;
+const POWER_BALL_COUNT = 5;
 
 // isLucky Generator
 const K_BASE = 3;
@@ -13,55 +14,89 @@ if (L_PLAY < L_MATCH) {
   throw new Error('No plays will be lucky!');
 }
 
-let numbers = []; // From 1 to 70
+const numbers = []; // From 1 to 70
 for (let i = 1; i <= POWER_BALL_NUMBERS; i += 1) {
   numbers.push(i);
 }
 
-function isFeelingLuckyGenerator(x) {
-  let k;
+const GENERATORS = {
+  /**
+   * Generates a copy of the numbers array, then picks 5 indexes sequentially.
+   */
+  SET_PICK: function () {
+    
+    function pickNumbers(count = POWER_BALL_COUNT) {
+      let set = [].concat(numbers);
+      let picks = [];
 
-  return (x) => {
-    k = Math.floor(Math.random() * K_MULTI) + K_BASE;
-    return (Math.floor(Math.random() * L_SPREAD) % k) === 0;
-  }
-}
+      for (let i = 0; i < count; i += 1) {
+        let index = Math.floor(Math.random() * set.length);
+        let number = set.splice(index, 1)[0];
+        picks.push(number);
+      }
 
-function pickNumbers(count = 5) {
-  let picksRemaining = count;
-
-  const isFeelingLucky = isFeelingLuckyGenerator();
-
-  function isForcePick(x) {
-    let numbersRemaining = POWER_BALL_NUMBERS - x;
-    let forcePick = numbersRemaining <= (picksRemaining - 1);
-    return forcePick;
-  }
-
-  function shouldPick(x) {
-    if (picksRemaining > 0) {
-      return isFeelingLucky(x) || isForcePick(x);
+      return picks.sort();  // Result must be sorted in ascending order.
     }
 
-    return false;
-  }
+    return pickNumbers;
+  },
+  /**
+   * Generator that picks by iterating over all 70 options and choosing yes or no.
+   */
+  FEELING_LUCKY: function () {
+    function isFeelingLuckyGenerator(x) {
+      let k;
 
-  return numbers.filter((x) => {
-    if (shouldPick(x)) {
-      picksRemaining -= 1;
-      return true;
+      return (x) => {
+        k = Math.floor(Math.random() * K_MULTI) + K_BASE;
+        return (Math.floor(Math.random() * L_SPREAD) % k) === 0;
+      }
     }
 
-    return false;
-  });
-}
+    function pickNumbers(count = POWER_BALL_COUNT) {
+      let picksRemaining = count;
+
+      const isFeelingLucky = isFeelingLuckyGenerator();
+
+      function isForcePick(x) {
+        let numbersRemaining = POWER_BALL_NUMBERS - x;
+        let forcePick = numbersRemaining <= (picksRemaining - 1);
+        return forcePick;
+      }
+
+      function shouldPick(x) {
+        if (picksRemaining > 0) {
+          return isFeelingLucky(x) || isForcePick(x);
+        }
+
+        return false;
+      }
+
+      return numbers.filter((x) => {
+        if (shouldPick(x)) {
+          picksRemaining -= 1;
+          return true;
+        }
+
+        return false;
+      });
+    }
+
+    return pickNumbers;
+  }
+};
+
+/**
+ * Function that takes in the number of numbers to pick, and outputs a sorted array of those numbers in ascending order.
+ */
+const PICK_NUMBERS = GENERATORS.SET_PICK();
 
 function isLuckyPlay(picks, megaBall) {
   return Math.ceil(Math.random() * L_PLAY) === L_MATCH;
 }
 
 function generateMegaMillionsPlay() {
-  let picks = pickNumbers();
+  let picks = PICK_NUMBERS();
   let megaBall = Math.floor(Math.random() * 25) + 1;
   let lucky = isLuckyPlay(picks, megaBall);
 
@@ -170,7 +205,7 @@ const MINIMUM_REPEATS = Number(process.argv[7]) || 2;
 
 let results = playMegaMillions(ROUNDS, LUCKY_ONLY, LUCKY_ROUNDS);
 
-if (PICK_ONLY_REPEATS) {
+if (PICK_ONLY_REPEATS && MINIMUM_REPEATS > 1) {
   results.pickOnlyRepeats = true;
   results = pickRepeatNumbersFromResults(results, MINIMUM_REPEATS);
 }
