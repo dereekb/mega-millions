@@ -73,7 +73,7 @@ function generateMegaMillionsPlay() {
 }
 
 function printPlay(play) {
-  console.log(play.picks.join(' ') + ' m: ' + play.megaBall + ' Lucky: ' + play.lucky);
+  console.log(play.picks.join(' ') + ' m: ' + play.megaBall + ' Lucky: ' + play.lucky + ((play.$repeats) ? (` - r: ${play.$repeats}`) : ''));
   return play;
 }
 
@@ -115,12 +115,40 @@ function playMegaMillions(rounds = 1, luckyOnly, luckyRounds) {
   return results;
 }
 
+// MARK: Picks
+function pickRepeatNumbers(plays, MINIMUM_REPEATS = 2) {
+  const map = {};
+
+  function hashPlay(play) {
+    return play.picks.join('-');
+  }
+
+  return plays.filter((x) => {
+    const hash = hashPlay(x);
+    map[hash] = (map[hash]) ? map[hash] + 1 : 1;
+    return map[hash] === MINIMUM_REPEATS; // Only select repeats on the first time.
+  }).map((x) => {
+    const hash = hashPlay(x);
+    x.$repeats = map[hash];
+    return x;
+  });
+}
+
+function pickRepeatNumbersFromResults(results, MINIMUM_REPEATS) {
+  return {
+    ...results,
+    plays: pickRepeatNumbers(results.plays, MINIMUM_REPEATS)
+  };
+}
+
+// MARK: Print
 function printPlayResultsHeader() {
+  console.log('--------- RESULTS ----------');
   console.log(JSON.stringify({
     ...results,
-    plays: undefined
+    plays: results.plays.length
   }));
-  console.log('--------- PLAYS ----------')
+  console.log('--------- PLAYS ----------');
 }
 
 function printPlayResults(results) {
@@ -135,10 +163,17 @@ function printSpreadsheetPlayResults(results) {
 
 const LUCKY_ONLY = Boolean(process.argv[3] === 'true') || false;
 const ROUNDS = Number(process.argv[2]) || ((LUCKY_ONLY) ? 1000 : 1);
-const LUCKY_ROUNDS = Number(process.argv[4]) || 1;
-const SPREADSHEET_PRINT = Boolean(process.argv[5] === 'true') || false;
+const LUCKY_ROUNDS = Number(process.argv[4]) || ROUNDS;
+const PICK_ONLY_REPEATS = Boolean(process.argv[5] === 'true') || ((LUCKY_ONLY) ? false : (ROUNDS >= 10000));
+const SPREADSHEET_PRINT = Boolean(process.argv[6] === 'true') || false;
+const MINIMUM_REPEATS = Number(process.argv[7]) || 2;
 
 let results = playMegaMillions(ROUNDS, LUCKY_ONLY, LUCKY_ROUNDS);
+
+if (PICK_ONLY_REPEATS) {
+  results.pickOnlyRepeats = true;
+  results = pickRepeatNumbersFromResults(results, MINIMUM_REPEATS);
+}
 
 // Print Results
 ((SPREADSHEET_PRINT) ? printSpreadsheetPlayResults : printPlayResults)(results);
