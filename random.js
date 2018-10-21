@@ -24,7 +24,7 @@ const GENERATORS = {
    * Generates a copy of the numbers array, then picks 5 indexes sequentially.
    */
   SET_PICK: function () {
-    
+
     function pickNumbers(count = POWER_BALL_COUNT) {
       let set = [].concat(numbers);
       let picks = [];
@@ -35,7 +35,7 @@ const GENERATORS = {
         picks.push(number);
       }
 
-      return picks.sort();  // Result must be sorted in ascending order.
+      return picks.sort((x, y) => x - y); // Result must be sorted in ascending order.
     }
 
     return pickNumbers;
@@ -208,6 +208,9 @@ let results = playMegaMillions(ROUNDS, LUCKY_ONLY, LUCKY_ROUNDS);
 if (PICK_ONLY_REPEATS && MINIMUM_REPEATS > 1) {
   results.pickOnlyRepeats = true;
   results = pickRepeatNumbersFromResults(results, MINIMUM_REPEATS);
+
+  // Sort by most repeats.
+  results.plays.sort((x, y) => x.$repeats - y.$repeats);
 }
 
 // Print Results
